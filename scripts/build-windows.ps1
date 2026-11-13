@@ -2,12 +2,13 @@ $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
 $AppName = "HES-SO Print"
 $Venv = ".build-venv"
-$Python = if ($env:PYTHON_VERSION) { $env:PYTHON_VERSION } else { "3.14" }
+$Python = if ($env:PYTHON_VERSION) { $env:PYTHON_VERSION } else { "3.14.7" }
 $env:PYINSTALLER_CONFIG_DIR = Join-Path (Get-Location) ".pyinstaller"
 
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue build, dist, .pyinstaller, $Venv
 
 if (Get-Command uv -ErrorAction SilentlyContinue) {
+  uv python install $Python
   uv venv --python $Python $Venv
   & "$Venv\Scripts\Activate.ps1"
   uv pip install --python "$Venv\Scripts\python.exe" --upgrade pyinstaller selenium keyring pypdf fastapi uvicorn python-multipart

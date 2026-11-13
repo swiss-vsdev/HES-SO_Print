@@ -3,11 +3,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 APP_NAME="HES-SO Print"
 VENV=".build-venv"
-PYTHON_VERSION="${PYTHON_VERSION:-3.14}"
+PYTHON_VERSION="${PYTHON_VERSION:-3.14.7}"
 export PYINSTALLER_CONFIG_DIR="$PWD/.pyinstaller"
 
 rm -rf build dist .pyinstaller "$VENV"
 if command -v uv >/dev/null 2>&1; then
+  uv python install "$PYTHON_VERSION"
   uv venv --python "$PYTHON_VERSION" "$VENV"
   # shellcheck disable=SC1091
   source "$VENV/bin/activate"

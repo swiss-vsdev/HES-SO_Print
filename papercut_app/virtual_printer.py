@@ -36,10 +36,17 @@ try:
 except ImportError:
     HAS_FASTAPI = False
 
-from .config import VIRTUAL_PRINTER_PORT, log
+from .config import VIRTUAL_PRINTER_PORT, log, APP_DIR
 from .selenium_driver import selenium_submit_print
 from .helpers import printer_name
 from . import ipp_server as ipp
+
+
+
+def _make_job_dir(prefix="job_"):
+    base = os.path.join(APP_DIR, "jobs")
+    os.makedirs(base, exist_ok=True)
+    return tempfile.mkdtemp(prefix=prefix, dir=base)
 
 class VirtualPrinterServer:
     """HTTP/IPP print server that accepts print jobs and forwards to PaperCut via Selenium."""
@@ -253,7 +260,8 @@ class VirtualPrinterServer:
             pass
         try:
             parent = os.path.dirname(file_path)
-            if parent and os.path.basename(parent).startswith("papercut_"):
+            base = os.path.basename(parent)
+            if parent and (base.startswith("papercut_") or base.startswith("http_") or base.startswith("ipp_")):
                 shutil.rmtree(parent, ignore_errors=True)
         except:
             pass
@@ -359,7 +367,7 @@ class VirtualPrinterServer:
             original_name = os.path.basename(file.filename or "document.pdf")
             if not original_name or original_name in (".", ".."):
                 original_name = "document.pdf"
-            tmp_dir = tempfile.mkdtemp(prefix="papercut_http_")
+            tmp_dir = _make_job_dir(prefix="http_")
             tmp_path = os.path.join(tmp_dir, original_name)
             with open(tmp_path, "wb") as f:
                 content = await file.read()
@@ -465,7 +473,7 @@ class VirtualPrinterServer:
                         if not Path(job_name).suffix:
                             job_name = f"{job_name}{ext}"
 
-                        tmp_dir = tempfile.mkdtemp(prefix="papercut_ipp_")
+                        tmp_dir = _make_job_dir(prefix="ipp_")
                         tmp_path = os.path.join(tmp_dir, job_name)
                         with open(tmp_path, "wb") as f:
                             f.write(actual)

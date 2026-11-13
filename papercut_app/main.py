@@ -32,7 +32,12 @@ def main():
     try:
         args = _parse_args(sys.argv[1:])
         forced = None if args.browser == "auto" else args.browser
-        log(f"app start (frozen={getattr(sys, 'frozen', False)} exe={sys.executable} browser={args.browser})")
+        try:
+            import tkinter as _tk
+            tk_ver = f"Tk {_tk.TkVersion}"
+        except Exception:
+            tk_ver = "Tk ?"
+        log(f"app start (frozen={getattr(sys, 'frozen', False)} exe={sys.executable} python={sys.version.split()[0]} {tk_ver} browser={args.browser})")
         root = tk.Tk()
         app = PaperCutGUI(root, forced_browser=forced)
         root.mainloop()
