@@ -14,17 +14,23 @@ jobs:
         include:
           - os: macos-latest
             artifact: HES-SO-Print-macos
+            build_shell: bash
             script: bash scripts/build-macos.sh
+            package_shell: bash
             zip_cmd: ditto -c -k --sequesterRsrc --keepParent "dist/HES-SO Print.app" "dist/HES-SO-Print-macos.zip"
             path: dist/HES-SO-Print-macos.zip
           - os: windows-latest
             artifact: HES-SO-Print-windows
-            script: pwsh -File scripts/build-windows.ps1
+            build_shell: pwsh
+            script: ./scripts/build-windows.ps1
+            package_shell: pwsh
             zip_cmd: Compress-Archive -Path "dist/HES-SO Print/*" -DestinationPath "dist/HES-SO-Print-windows.zip"
             path: dist/HES-SO-Print-windows.zip
           - os: ubuntu-latest
             artifact: HES-SO-Print-linux
+            build_shell: bash
             script: bash scripts/build-linux.sh
+            package_shell: bash
             zip_cmd: cd dist && zip -r HES-SO-Print-linux.zip "HES-SO Print"
             path: dist/HES-SO-Print-linux.zip
 
@@ -42,11 +48,11 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Build
-        shell: bash
+        shell: ${{ matrix.build_shell }}
         run: ${{ matrix.script }}
 
       - name: Package
-        shell: bash
+        shell: ${{ matrix.package_shell }}
         run: ${{ matrix.zip_cmd }}
 
       - name: Upload artifact
