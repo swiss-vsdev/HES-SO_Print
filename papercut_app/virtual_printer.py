@@ -470,7 +470,7 @@ class VirtualPrinterServer:
                         with open(tmp_path, "wb") as f:
                             f.write(actual)
 
-                        # Convert PS to PDF if needed
+                        # Convert PS to PDF if possible; fall back to PS if no converter
                         if ext == ".ps":
                             converted = self._convert_ps_to_pdf(tmp_path)
                             if converted:
@@ -481,13 +481,7 @@ class VirtualPrinterServer:
                                 tmp_path = converted
                                 job_name = os.path.basename(converted)
                             else:
-                                log(f"ipp print-job PS conversion failed: {job_name}")
-                                try:
-                                    shutil.rmtree(tmp_dir, ignore_errors=True)
-                                except Exception:
-                                    pass
-                                resp = ipp.build_ipp_response(req_id, ipp.STATUS_CLIENT_ERROR_NOT_POSSIBLE)
-                                return Response(content=resp, media_type="application/ipp")
+                                log(f"ipp print-job: no PS->PDF converter found, queuing PS as-is: {job_name}")
 
                         job = self._new_job(job_name, source="ipp")
                         options = dict(self.default_options)
