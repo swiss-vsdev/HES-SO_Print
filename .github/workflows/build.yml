@@ -47,12 +47,29 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Build
-        shell: ${{ matrix.build_shell }}
+      - name: Build (macOS/Linux)
+        if: runner.os != 'Windows'
+        shell: bash
         run: ${{ matrix.script }}
 
-      - name: Package
-        shell: ${{ matrix.package_shell }}
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ${{ matrix.script }}
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: ${{ matrix.zip_cmd }}
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ${{ matrix.zip_cmd }}
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: ${{ matrix.zip_cmd }}
 
       - name: Upload artifact
