@@ -285,22 +285,49 @@ class VirtualPrinterServer:
         return extracted
 
     def _convert_ps_to_pdf(self, ps_path):
-        """Convert PostScript to PDF if ghostscript is available."""
+        """Convert PostScript to PDF using available system tools."""
         out_dir = os.path.dirname(ps_path)
         base = Path(ps_path).stem or "print"
         pdf_path = os.path.join(out_dir, f"{base}.pdf")
-        converters = [
-            ["ps2pdf", ps_path, pdf_path],
-            ["gs", "-dBATCH", "-dNOPAUSE", "-sDEVICE=pdfwrite", f"-sOutputFile={pdf_path}", ps_path],
-            ["pstopdf", ps_path, "-o", pdf_path],
-        ]
-        for cmd in converters:
-            if not shutil.which(cmd[0]):
-                continue
+        candidates = []
+
+        def add(cmd, stdout_path=None):
+            exe = cmd[0]
+            if os.path.isabs(exe):
+                ok = os.path.exists(exe)
+            else:
+                ok = shutil.which(exe) is not None
+            if ok and (cmd, stdout_path) not in candidates:
+                candidates.append((cmd, stdout_path))
+
+        # Common converters (PATH + macOS locations)
+        for exe in ("pstopdf", "/usr/bin/pstopdf", "/System/Library/Printers/Libraries/pstopdf"):
+            add([exe, ps_path, "-o", pdf_path])
+        for exe in ("ps2pdf", "/usr/local/bin/ps2pdf", "/opt/homebrew/bin/ps2pdf"):
+            add([exe, ps_path, pdf_path])
+        for exe in ("gs", "/opt/homebrew/bin/gs", "/usr/local/bin/gs", "/usr/bin/gs"):
+            add([exe, "-dBATCH", "-dNOPAUSE", "-dSAFER", "-sDEVICE=pdfwrite", f"-sOutputFile={pdf_path}", ps_path])
+        for exe in ("cupsfilter", "/usr/sbin/cupsfilter"):
+            add([exe, "-m", "application/pdf", ps_path], stdout_path=pdf_path)
+
+        log(f"ps->pdf converters found: {[c[0][0] for c in candidates] or 'none'} for {os.path.basename(ps_path)}")
+        for cmd, stdout_path in candidates:
             try:
-                subprocess.run(cmd, check=True, timeout=60, capture_output=True)
-                if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
+                if stdout_path:
+                    with open(stdout_path, "wb") as out:
+                        p = subprocess.run(cmd, stdout=out, stderr=subprocess.PIPE, timeout=60)
+                else:
+                    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+                if p.returncode == 0 and os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
+                    log(f"ps->pdf converted with {cmd[0]}: {os.path.basename(pdf_path)}")
                     return pdf_path
+                err = (p.stderr or b"").decode("utf-8", "ignore").strip()[:200]
+                log(f"ps->pdf failed ({cmd[0]} rc={p.returncode}): {err}")
+            except Exception as e:
+                log(f"ps->pdf failed ({cmd[0]}): {e}")
+            try:
+                if os.path.exists(pdf_path) and os.path.getsize(pdf_path) == 0:
+                    os.unlink(pdf_path)
             except Exception:
                 pass
         return None

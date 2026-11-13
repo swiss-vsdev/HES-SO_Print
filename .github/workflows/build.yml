@@ -35,6 +35,8 @@ jobs:
             path: dist/HES-SO-Print-linux.zip
 
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHON_VERSION: "3.14.7"
 
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +44,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: "3.14.7"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
