@@ -1,0 +1,56 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: HES-SO-Print-macos
+            script: bash scripts/build-macos.sh
+            zip_cmd: ditto -c -k --sequesterRsrc --keepParent "dist/HES-SO Print.app" "dist/HES-SO-Print-macos.zip"
+            path: dist/HES-SO-Print-macos.zip
+          - os: windows-latest
+            artifact: HES-SO-Print-windows
+            script: pwsh -File scripts/build-windows.ps1
+            zip_cmd: Compress-Archive -Path "dist/HES-SO Print/*" -DestinationPath "dist/HES-SO-Print-windows.zip"
+            path: dist/HES-SO-Print-windows.zip
+          - os: ubuntu-latest
+            artifact: HES-SO-Print-linux
+            script: bash scripts/build-linux.sh
+            zip_cmd: cd dist && zip -r HES-SO-Print-linux.zip "HES-SO Print"
+            path: dist/HES-SO-Print-linux.zip
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        shell: bash
+        run: ${{ matrix.script }}
+
+      - name: Package
+        shell: bash
+        run: ${{ matrix.zip_cmd }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
