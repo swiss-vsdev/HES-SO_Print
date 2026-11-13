@@ -1,0 +1,29 @@
+[project]
+name = "hes-so-print"
+version = "1.0.0"
+description = "HES-SO PaperCut desktop print client (GUI, virtual IPP/HTTP print server, Selenium WebPrint)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "selenium>=4.15",
+    "keyring>=25.0",
+    "pypdf>=3.0",
+    "fastapi>=0.100",
+    "uvicorn>=0.23",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+hes-so-print = "papercut_app.main:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["papercut_app"]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.0",
+]

@@ -1,0 +1,32 @@
+# Python-generated files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+.pyinstaller/
+
+# Virtual environments
+.venv/
+.venv*/
+.build-venv/
+venv/
+ENV/
+
+# App/build artifacts
+*.spec.bak
+*.log
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Local app data (credentials/logs stored outside repo, but just in case)
+.papercut_credentials.json
